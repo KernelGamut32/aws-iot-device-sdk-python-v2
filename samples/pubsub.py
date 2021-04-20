@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 from uuid import uuid4
+import json
 
 # This sample uses the Message Broker for AWS IoT to send and receive messages
 # through an MQTT connection. On startup, the device connects to the server,
@@ -39,6 +40,8 @@ parser.add_argument('--proxy-host', help="Hostname for proxy to connect to. Note
 parser.add_argument('--proxy-port', type=int, default=8080, help="Port for proxy to connect to.")
 parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
     help='Logging level')
+parser.add_argument('--interval', type=int, default=1)
+parser.add_argument('--devicename', default='')
 
 # Using globals to simplify sample code
 args = parser.parse_args()
@@ -151,13 +154,14 @@ if __name__ == '__main__':
 
         publish_count = 1
         while (publish_count <= args.count) or (args.count == 0):
-            message = "{} [{}]".format(args.message, publish_count)
-            print("Publishing message to topic '{}': {}".format(args.topic, message))
+            jsonMessage = {"device_name": args.devicename, "data": {"temperature": 79.5, "humidity": 0.45} }
+            jsonData = json.dumps(jsonMessage)
+            print("Publishing message to topic '{}': {}".format(args.topic, jsonData))
             mqtt_connection.publish(
                 topic=args.topic,
-                payload=message,
+                payload=jsonData,
                 qos=mqtt.QoS.AT_LEAST_ONCE)
-            time.sleep(1)
+            time.sleep(args.interval)
             publish_count += 1
 
     # Wait for all messages to be received.
